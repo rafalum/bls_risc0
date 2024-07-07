@@ -5,29 +5,38 @@ use methods::{
 };
 use risc0_zkvm::{default_prover, ExecutorEnv};
 
+extern crate rand;
+use rand::*;
+
+extern crate blst;
+use blst::min_pk::*;
+
+
 fn main() {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::filter::EnvFilter::from_default_env())
         .init();
 
-    // An executor environment describes the configurations for the zkVM
-    // including program inputs.
-    // An default ExecutorEnv can be created like so:
-    // `let env = ExecutorEnv::builder().build().unwrap();`
-    // However, this `env` does not have any inputs.
-    //
-    // To add guest input to the executor environment, use
-    // ExecutorEnvBuilder::write().
-    // To access this method, you'll need to use ExecutorEnv::builder(), which
-    // creates an ExecutorEnvBuilder. When you're done adding input, call
-    // ExecutorEnvBuilder::build().
+    let number_keys = 32;
 
-    // For example:
-    let input: u32 = 15 * u32::pow(2, 27) + 1;
+    let mut rng = rand::thread_rng();
+    let mut public_keys = Vec::with_capacity(number_keys);
+
+    for _ in 0..number_keys {
+        let mut ikm = [0u8; 32];
+        rng.fill_bytes(&mut ikm);
+
+        let sk = SecretKey::key_gen(&ikm, &[]).unwrap();
+        let pk = sk.sk_to_pk();
+        public_keys.extend(pk.serialize());
+    }
+
+
     let env = ExecutorEnv::builder()
-        .write(&input)
+        .write(&number_keys)
         .unwrap()
+        .write_slice(&public_keys)
         .build()
         .unwrap();
 
@@ -43,10 +52,10 @@ fn main() {
     // extract the receipt.
     let receipt = prove_info.receipt;
 
-    // TODO: Implement code for retrieving receipt journal here.
+    // Extract the aggregated public key from the receipt.
+    let _output: [u8; 96]= receipt.journal.bytes[0..96].try_into().unwrap();
+    let _agg_pk = PublicKey::deserialize(&_output).unwrap();
 
-    // For example:
-    let _output: u32 = receipt.journal.decode().unwrap();
 
     // The receipt was verified at the end of proving, but the below code is an
     // example of how someone else could verify this receipt.
