@@ -3,11 +3,9 @@
 use methods::{
     METHOD_ELF, METHOD_ID
 };
-use risc0_zkvm::{default_prover, serde::Serializer, ExecutorEnv};
-use serde::Serialize;
+use risc0_zkvm::{default_prover, ExecutorEnv};
 
 use std::fs::File;
-use std::io::Write;
 
 extern crate rand;
 use rand::*;
