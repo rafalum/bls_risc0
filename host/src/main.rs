@@ -3,7 +3,11 @@
 use methods::{
     METHOD_ELF, METHOD_ID
 };
-use risc0_zkvm::{default_prover, ExecutorEnv};
+use risc0_zkvm::{default_prover, serde::Serializer, ExecutorEnv};
+use serde::Serialize;
+
+use std::fs::File;
+use std::io::Write;
 
 extern crate rand;
 use rand::*;
@@ -51,6 +55,12 @@ fn main() {
 
     // extract the receipt.
     let receipt = prove_info.receipt;
+
+    let file_path = "receipt.bin";
+    let mut file = File::create(file_path).unwrap();
+    bincode::serialize_into(&mut file, &receipt).unwrap();
+
+    println!("Receipt serialized and written to {}", file_path);
 
     // Extract the aggregated public key from the receipt.
     let _output: [u8; 96]= receipt.journal.bytes[0..96].try_into().unwrap();
